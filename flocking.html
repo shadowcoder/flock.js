@@ -1,0 +1,65 @@
+<canvas width="128" height="128" id="c"></canvas>
+
+<script>
+
+var canvas = document.getElementById("c");
+var ctx = canvas.getContext("2d");
+
+var flock = new Flock(50);
+
+var worstCase = 256;
+
+window.addEventListener("load", frame);
+
+function Flock(n) {
+	this.centerX = 0;
+	this.centerY = 0;
+	
+	this.flockees = [];
+	while(n--) this.flockees.push(new Flockee(this));
+}
+
+Flock.prototype.simulate = function() {
+	var sumX = 0, sumY = 0;
+	for(var i = 0; i < this.flockees.length; ++i) {
+		sumX += this.flockees[i].x;
+		sumY += this.flockees[i].y;
+	}
+	this.centerX = (sumX / this.flockees.length)/* + Math.floor((Math.random() * 32) - 16)*/;
+	this.centerY = (sumY / this.flockees.length) /*+ Math.floor((Math.random() * 32) - 16)*/;
+	
+	for(i = 0; i < this.flockees.length; ++i) this.flockees[i].simulate();
+}
+
+function Flockee(f) {
+	this.x = Math.floor(Math.random() * 128);
+	this.y = Math.floor(Math.random() * 128);
+	this.flock = f;
+}
+Flockee.prototype.simulate = function() {
+	var devianceX = this.x - this.flock.centerX,
+		devianceY = this.y - this.flock.centerY;
+		
+	var devianceDistance = Math.sqrt((devianceX*devianceX) + (devianceY*devianceY));
+	
+	this.x -= (devianceX * (devianceDistance / 512)) + Math.floor((Math.random() * 16) - 8);
+	this.y -= (devianceY * (devianceDistance / 512)) + Math.floor((Math.random() * 16) - 8);
+	
+};
+
+function frame() {
+	ctx.fillStyle = "#FFF";
+	ctx.fillRect(0, 0, 128, 128);
+	
+	flock.simulate();
+	
+	ctx.fillStyle = "#000";
+	for(var i = 0; i < flock.flockees.length; ++i)
+		ctx.fillRect(flock.flockees[i].x, flock.flockees[i].y, 1, 1);
+	
+	//window.webkitRequestAnimationFrame(frame);
+	setTimeout(frame, 500);
+}
+
+
+</script>
