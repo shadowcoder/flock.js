@@ -5,15 +5,26 @@
 var canvas = document.getElementById("c");
 var ctx = canvas.getContext("2d");
 
-var flock = new Flock(50);
+var flockSize = 50,
+	flockSpeed = 50,
+	flockRandomness = 3;
 
+var flock = new Flock(flockSize);
+	
 var worstCase = 256;
 
 window.addEventListener("load", frame);
+canvas.addEventListener("mousemove", mouse);
 
 function Flock(n) {
 	this.centerX = 0;
 	this.centerY = 0;
+	
+	this.targetX = 64;
+	this.targetY = 64;
+	this.targetDis = 0;
+	
+	this.flockSpeed = flockSpeed;
 	
 	this.flockees = [];
 	while(n--) this.flockees.push(new Flockee(this));
@@ -25,10 +36,21 @@ Flock.prototype.simulate = function() {
 		sumX += this.flockees[i].x;
 		sumY += this.flockees[i].y;
 	}
-	this.centerX = (sumX / this.flockees.length)/* + Math.floor((Math.random() * 32) - 16)*/;
-	this.centerY = (sumY / this.flockees.length) /*+ Math.floor((Math.random() * 32) - 16)*/;
+	
+	this.centerX = (sumX / this.flockees.length);
+	this.centerY = (sumY / this.flockees.length);
+	
+	if((Math.abs(this.centerX - this.targetX) + Math.abs(this.centerY - this.targetY)) > 10) {
+		this.centerX += this.flockSpeed * ((this.targetX - this.centerX) > 0 ? 1 : -1);
+		this.centerY += this.flockSpeed * ((this.targetY - this.centerY) > 0 ? 1 : -1);
+	}
 	
 	for(i = 0; i < this.flockees.length; ++i) this.flockees[i].simulate();
+}
+Flock.prototype.setTarget = function(x, y) {
+	this.targetX = x;
+	this.targetY = y;
+	this.targetDis = Math.sqrt((this.targetX * this.targetX) + (this.targetY * this.targetY));
 }
 
 function Flockee(f) {
@@ -42,8 +64,8 @@ Flockee.prototype.simulate = function() {
 		
 	var devianceDistance = Math.sqrt((devianceX*devianceX) + (devianceY*devianceY));
 	
-	this.x -= (devianceX * (devianceDistance / 512)) + Math.floor((Math.random() * 16) - 8);
-	this.y -= (devianceY * (devianceDistance / 512)) + Math.floor((Math.random() * 16) - 8);
+	this.x -= (devianceX * (devianceDistance / 4096)) + (Math.random()*flockRandomness - (flockRandomness * 0.5));
+	this.y -= (devianceY * (devianceDistance / 4096)) + (Math.random()*flockRandomness - (flockRandomness * 0.5));
 	
 };
 
@@ -57,9 +79,15 @@ function frame() {
 	for(var i = 0; i < flock.flockees.length; ++i)
 		ctx.fillRect(flock.flockees[i].x, flock.flockees[i].y, 1, 1);
 	
-	//window.webkitRequestAnimationFrame(frame);
-	setTimeout(frame, 500);
+	window.webkitRequestAnimationFrame(frame);
 }
 
+
+function mouse(e) {
+	var mx = e.pageX - this.offsetLeft;
+	var my = e.pageY - this.offsetTop;
+
+	flock.setTarget(mx, my);
+}
 
 </script>
